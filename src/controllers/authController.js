@@ -59,11 +59,11 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    const { email, password } = req.body;
 
-    if (!email || !password || !role) {
+    if (!email || !password) {
       return res.status(400).json({
-        message: "Email, password, dan role wajib diisi",
+        message: "Email dan password wajib diisi",
       });
     }
 
@@ -72,12 +72,6 @@ export const login = async (req, res) => {
     if (!user) {
       return res.status(401).json({
         message: "Email atau password salah",
-      });
-    }
-
-    if (user.role !== role) {
-      return res.status(403).json({
-        message: "Role tidak sesuai dengan akun",
       });
     }
 
