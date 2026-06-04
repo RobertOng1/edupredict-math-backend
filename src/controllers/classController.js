@@ -7,9 +7,7 @@ const generateClassCode = () => {
   let code = "";
 
   for (let i = 0; i < 6; i++) {
-    code += chars.charAt(
-      Math.floor(Math.random() * chars.length)
-    );
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
 
   return code;
@@ -26,17 +24,17 @@ export const createClass = async (req, res) => {
     }
 
     let classCode;
-let isExist = true;
+    let isExist = true;
 
-while (isExist) {
-  classCode = generateClassCode();
+    while (isExist) {
+      classCode = generateClassCode();
 
-  const existingClass = await Class.findOne({
-    classCode,
-  });
+      const existingClass = await Class.findOne({
+        classCode,
+      });
 
-  isExist = !!existingClass;
-}
+      isExist = !!existingClass;
+    }
 
     const newClass = await Class.create({
       className,
@@ -194,6 +192,67 @@ export const getMyClasses = async (req, res) => {
     res.json({
       success: true,
       classes,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const leaveClass = async (req, res) => {
+  try {
+    const { classId } = req.params;
+
+    const classData = await Class.findById(classId);
+
+    if (!classData) {
+      return res.status(404).json({
+        success: false,
+        message: "Kelas tidak ditemukan",
+      });
+    }
+
+    const isStudentInClass = classData.students.some(
+      (studentId) => studentId.toString() === req.user._id.toString()
+    );
+
+    if (!isStudentInClass) {
+      return res.status(400).json({
+        success: false,
+        message: "Kamu tidak tergabung di kelas ini",
+      });
+    }
+
+    classData.students = classData.students.filter(
+      (studentId) => studentId.toString() !== req.user._id.toString()
+    );
+
+    await classData.save();
+
+    await createNotification({
+      userId: req.user._id,
+      title: "Keluar dari kelas",
+      message: `Kamu telah keluar dari kelas ${classData.className}.`,
+      type: "class",
+    });
+
+    await createNotification({
+      userId: classData.teacher,
+      title: "Siswa keluar dari kelas",
+      message: `${req.user.fullName} keluar dari kelas ${classData.className}.`,
+      type: "class",
+    });
+
+    res.json({
+      success: true,
+      message: "Berhasil keluar dari kelas",
+      class: {
+        id: classData._id,
+        className: classData.className,
+        classCode: classData.classCode,
+      },
     });
   } catch (error) {
     res.status(500).json({

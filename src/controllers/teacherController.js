@@ -3,6 +3,62 @@ import User from "../models/User.js";
 import Attempt from "../models/Attempt.js";
 import QuizSession from "../models/QuizSession.js";
 import Prediction from "../models/Prediction.js";
+import Question from "../models/Question.js";
+
+const categories = [
+  "Statistika",
+  "Geometri",
+  "Pengukuran",
+  "Bilangan",
+  "Rasio",
+  "Aljabar",
+];
+
+const buildCategoryProgress = async (studentId) => {
+  const result = {};
+
+  const attempts = await Attempt.find({ student: studentId }).populate(
+    "question",
+    "category"
+  );
+
+  for (const category of categories) {
+    const totalQuestions = await Question.countDocuments({ category });
+
+    const categoryAttempts = attempts.filter((attempt) => {
+      return attempt.question?.category === category;
+    });
+
+    const solvedQuestionIds = new Set(
+      categoryAttempts
+        .filter((attempt) => attempt.correctness === 1)
+        .map((attempt) => attempt.question?._id?.toString())
+        .filter(Boolean)
+    );
+
+    const correct = categoryAttempts.filter(
+      (attempt) => attempt.correctness === 1
+    ).length;
+
+    const totalAttempts = categoryAttempts.length;
+    const solved = solvedQuestionIds.size;
+
+    result[category] = {
+      total: totalAttempts,
+      correct,
+      solved,
+      totalQuestions,
+      progress:
+        totalQuestions > 0
+          ? Math.min(Math.round((solved / totalQuestions) * 100), 100)
+          : 0,
+      accuracy:
+        totalAttempts > 0 ? Math.round((correct / totalAttempts) * 100) : 0,
+    };
+  }
+
+  return result;
+};
 
 export const getTeacherDashboard = async (req, res) => {
   try {
@@ -148,6 +204,8 @@ export const getClassAnalytics = async (req, res) => {
       });
     }
 
+    const targetQuestions = await Question.countDocuments();
+
     const studentAnalytics = await Promise.all(
       classData.students.map(async (student) => {
         const totalAttempts = await Attempt.countDocuments({
@@ -173,9 +231,22 @@ export const getClassAnalytics = async (req, res) => {
             ? Math.round((correctAttempts / totalAttempts) * 100)
             : 0;
 
+        const attempts = await Attempt.find({
+          student: student._id,
+        }).populate("question", "_id");
+
+        const solvedQuestionIds = new Set(
+          attempts
+            .map((attempt) => attempt.question?._id?.toString())
+            .filter(Boolean)
+        );
+
         const progress =
-          totalAttempts > 0
-            ? Math.min(Math.round((totalAttempts / 500) * 100), 100)
+          targetQuestions > 0
+            ? Math.min(
+                Math.round((solvedQuestionIds.size / targetQuestions) * 100),
+                100
+              )
             : 0;
 
         return {
@@ -312,6 +383,8 @@ export const getStudentDetailAnalytics = async (req, res) => {
         ? Math.round((correctAttempts / totalAttempts) * 100)
         : 0;
 
+    const categoryProgress = await buildCategoryProgress(studentId);
+
     res.json({
       success: true,
       student: {
@@ -331,6 +404,7 @@ export const getStudentDetailAnalytics = async (req, res) => {
         completedQuizCount: completedQuizzes.length,
       },
       latestPrediction,
+      categoryProgress,
       skillPerformance,
       recentQuizzes: completedQuizzes.map((quiz) => ({
         id: quiz._id,

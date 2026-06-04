@@ -168,66 +168,133 @@ const buildWeeklyStreak = async (studentId) => {
 };
 
 const buildCategoryProgress = async (studentId) => {
-  const categories = [
-    "Statistika",
-    "Geometri",
-    "Pengukuran",
-    "Bilangan",
-    "Rasio",
-    "Aljabar",
-  ];
+
+  const result = {};
 
   const attempts = await Attempt.find({ student: studentId }).populate(
     "question",
     "category"
   );
 
-  const result = {};
+  const totalAllQuestions = await Question.countDocuments();
 
-  categories.forEach((category) => {
+  for (const category of categories) {
+    const totalQuestions = await Question.countDocuments({ category });
+
+    const categoryAttempts = attempts.filter((attempt) => {
+      return attempt.question?.category === category;
+    });
+
+    const solvedQuestionIds = new Set(
+      categoryAttempts
+        .filter((attempt) => attempt.correctness === 1)
+        .map((attempt) => attempt.question?._id?.toString())
+        .filter(Boolean)
+    );
+
+    const correct = categoryAttempts.filter(
+      (attempt) => attempt.correctness === 1
+    ).length;
+
+    const totalAttempts = categoryAttempts.length;
+    const solved = solvedQuestionIds.size;
+
     result[category] = {
-      total: 0,
-      correct: 0,
-      progress: 0,
+      total: totalAttempts,
+      correct,
+      solved,
+      totalQuestions,
+      progress:
+        totalQuestions > 0
+          ? Math.min(Math.round((solved / totalQuestions) * 100), 100)
+          : 0,
+      accuracy:
+        totalAttempts > 0
+          ? Math.round((correct / totalAttempts) * 100)
+          : 0,
     };
-  });
+  }
 
-  attempts.forEach((attempt) => {
-    const category = attempt.question?.category;
+  const solvedAllQuestionIds = new Set(
+    attempts
+      .filter((attempt) => attempt.correctness === 1)
+      .map((attempt) => attempt.question?._id?.toString())
+      .filter(Boolean)
+  );
 
-    if (!category || !result[category]) return;
-
-    result[category].total += 1;
-
-    if (attempt.correctness === 1) {
-      result[category].correct += 1;
-    }
-  });
-
-  categories.forEach((category) => {
-    const item = result[category];
-
-    item.progress =
-      item.total > 0 ? Math.round((item.correct / item.total) * 100) : 0;
-  });
-
-  const attemptedValues = categories
-    .map((category) => result[category])
-    .filter((item) => item.total > 0);
+  const correctAllAttempts = attempts.filter(
+    (attempt) => attempt.correctness === 1
+  ).length;
 
   result["Healthy Mix"] = {
-    total: attemptedValues.reduce((sum, item) => sum + item.total, 0),
-    correct: attemptedValues.reduce((sum, item) => sum + item.correct, 0),
+    total: attempts.length,
+    correct: correctAllAttempts,
+    solved: solvedAllQuestionIds.size,
+    totalQuestions: totalAllQuestions,
     progress:
-      attemptedValues.length > 0
-        ? Math.round(
-            (attemptedValues.reduce((sum, item) => sum + item.progress, 0) /
-              attemptedValues.length)
+      totalAllQuestions > 0
+        ? Math.min(
+            Math.round((solvedAllQuestionIds.size / totalAllQuestions) * 100),
+            100
           )
+        : 0,
+    accuracy:
+      attempts.length > 0
+        ? Math.round((correctAllAttempts / attempts.length) * 100)
         : 0,
   };
 
   return result;
+};
+
+const categories = [
+  "Statistika",
+  "Geometri",
+  "Pengukuran",
+  "Bilangan",
+  "Rasio",
+  "Aljabar",
+];
+
+const AI_CATEGORY_MAP = {
+  "Data Analysis, Statistics, and Probability": "Statistika",
+  "Geometry and Spatial Reasoning": "Geometri",
+  "Measurement, Area, and Volume": "Pengukuran",
+  "Number Sense, Properties, and Operations": "Bilangan",
+  "Ratios, Proportions, and Percentages": "Rasio",
+  "Algebraic Thinking, Equations, and Inequalities": "Aljabar",
+};
+
+const normalizeMasteryValue = (value) => {
+  if (value === null || value === undefined) return 0;
+
+  const numberValue = Number(value);
+
+  if (Number.isNaN(numberValue)) return 0;
+
+  return numberValue <= 1
+    ? Math.round(numberValue * 100)
+    : Math.round(numberValue);
+};
+
+const buildCategoryMastery = (latestPrediction) => {
+  const mastery = {};
+
+  categories.forEach((category) => {
+    mastery[category] = 0;
+  });
+
+  const rawMastery = latestPrediction?.categoryMastery || {};
+
+  Object.entries(rawMastery).forEach(([key, value]) => {
+    const mappedKey = AI_CATEGORY_MAP[key] || key;
+
+    if (!categories.includes(mappedKey)) return;
+
+    mastery[mappedKey] = normalizeMasteryValue(value);
+  });
+
+  return mastery;
 };
 
 export const getStudentDashboard = async (req, res) => {
@@ -275,6 +342,7 @@ export const getStudentDashboard = async (req, res) => {
       student: studentId,
     }).sort({ createdAt: -1 });
 
+    const categoryMastery = buildCategoryMastery(latestPrediction);
     const streak = await calculateCurrentStreak(studentId);
     const chart = await buildWeeklyChart(studentId);
     const dailyQuest = await buildDailyQuest(studentId);
@@ -310,6 +378,7 @@ export const getStudentDashboard = async (req, res) => {
         },
         aiPrediction: latestPrediction || null,
         categoryProgress,
+        categoryMastery,
         chart,
         dailyQuest,
         weeklyStreak,

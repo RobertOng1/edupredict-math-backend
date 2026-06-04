@@ -57,7 +57,7 @@ const buildStudentHistory = async (studentId) => {
 
 export const startQuiz = async (req, res) => {
   try {
-    const { category, mode = "learning", limit = 10 } = req.body;
+    const { category, mode, limit } = req.body;
 
     const filter = category && category !== "Mixed" ? { category } : {};
 
@@ -279,6 +279,34 @@ export const finishQuiz = async (req, res) => {
     user.streak = user.streak || 0;
 
     await user.save();
+    
+    let latestPredictionResult = null;
+
+    try {
+      const studentHistory = await buildStudentHistory(req.user._id);
+
+      if (studentHistory.length > 0) {
+        const prediction = await predictStudentMastery(
+          studentHistory,
+          user?.interests || ""
+        );
+
+        const mappedCategoryMastery = mapCategoryMastery(
+          prediction?.category_mastery || {}
+        );
+
+        const riskLevel = calculateRiskLevel(mappedCategoryMastery);
+
+        latestPredictionResult = await Prediction.create({
+          student: req.user._id,
+          categoryMastery: mappedCategoryMastery,
+          explanation: prediction?.explanation || null,
+          riskLevel,
+        });
+      }
+    } catch (predictionError) {
+      console.error("Finish quiz AI prediction failed:", predictionError.message);
+    }
 
     await createNotification({
       userId: req.user._id,
@@ -305,6 +333,8 @@ export const finishQuiz = async (req, res) => {
         xpEarned,
         level: user.level,
         streak: user.streak,
+        categoryMastery: latestPredictionResult?.categoryMastery || null,
+        riskLevel: latestPredictionResult?.riskLevel || "Unknown",
       },
     });
   } catch (error) {
