@@ -5,7 +5,7 @@ import Prediction from "../models/Prediction.js";
 import Question from "../models/Question.js";
 
 const dayNamesID = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
-const dayNamesShort = ["S", "M", "T", "W", "T", "F", "S"];
+const dayNamesShort = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
 const getStartOfDay = (date = new Date()) => {
   const start = new Date(date);
@@ -141,12 +141,25 @@ const buildDailyQuest = async (studentId) => {
   };
 };
 
+const getStartOfWeekMonday = (date = new Date()) => {
+  const start = new Date(date);
+  const day = start.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+
+  start.setDate(start.getDate() + diff);
+  start.setHours(0, 0, 0, 0);
+
+  return start;
+};
+
 const buildWeeklyStreak = async (studentId) => {
   const weeklyStreak = [];
+  const startOfWeek = getStartOfWeekMonday();
+  const today = new Date();
 
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(startOfWeek);
+    date.setDate(startOfWeek.getDate() + i);
 
     const hasQuiz = await QuizSession.exists({
       student: studentId,
@@ -158,9 +171,9 @@ const buildWeeklyStreak = async (studentId) => {
     });
 
     weeklyStreak.push({
-      day: dayNamesShort[date.getDay()],
+      day: dayNamesShort[i],
       active: Boolean(hasQuiz),
-      today: new Date().toDateString() === date.toDateString(),
+      today: today.toDateString() === date.toDateString(),
     });
   }
 
