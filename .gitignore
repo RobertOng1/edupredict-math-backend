@@ -39,3 +39,7 @@ pids
 *.pid
 *.seed
 *.pid.lock
+
+# back up and dev tool
+src/data/all_questions_backup.json
+src/data/remove_skill_id.py
