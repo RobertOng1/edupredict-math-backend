@@ -1,5 +1,7 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import questionRoutes from "./routes/questionRoutes.js";
 import quizRoutes from "./routes/quizRoutes.js";
@@ -14,6 +16,9 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 import path from "path";
 
 const app = express();
+
+// Establish database connection for Vercel/Production
+connectDB();
 
 app.use(cors());
 app.use(express.json());
