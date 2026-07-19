@@ -9587,7 +9587,7 @@
       "4/7",
       "13/12",
       "1 1/12",
-      "Kedua jawaban kedua dan ketiga benar"
+      "Jawaban B dan C benar"
     ],
     "correct_answer": 3
   },
@@ -10390,7 +10390,7 @@
       "1/2",
       "3/2",
       "3/6",
-      "Kedua jawaban pertama dan ketiga benar"
+      "Jawaban A dan C benar"
     ],
     "correct_answer": 3
   },
@@ -10423,7 +10423,7 @@
       "5/9 km²",
       "6/20 km²",
       "3/10 km²",
-      "Kedua jawaban kedua dan ketiga benar"
+      "Jawaban B dan C benar"
     ],
     "correct_answer": 3
   },
@@ -10445,7 +10445,7 @@
       "3 1/6",
       "7/2",
       "3 1/2",
-      "Kedua jawaban kedua dan ketiga benar"
+      "Jawaban B dan C benar"
     ],
     "correct_answer": 3
   },
@@ -10478,7 +10478,7 @@
       "5/7 meter",
       "2/5 meter",
       "4/10 meter",
-      "Kedua jawaban kedua dan ketiga benar"
+      "Jawaban B dan C benar"
     ],
     "correct_answer": 3
   },
@@ -10500,7 +10500,7 @@
       "0",
       "1",
       "40/40",
-      "Kedua jawaban kedua dan ketiga benar"
+      "Jawaban B dan C benar"
     ],
     "correct_answer": 3
   },
@@ -11907,10 +11907,10 @@
     "choices": [
       "1/9",
       "3/6",
-      "1/2",
-      "Kedua jawaban kedua dan ketiga benar"
+      "2/9",
+      "4/6"
     ],
-    "correct_answer": 3
+    "correct_answer": 1
   },
   {
     "skill_id": 280,
@@ -11985,7 +11985,7 @@
       "7/10",
       "5/10",
       "1/2",
-      "Kedua jawaban kedua dan ketiga benar"
+      "Jawaban B dan C benar"
     ],
     "correct_answer": 3
   },
@@ -12018,7 +12018,7 @@
       "4/3 bagian",
       "1/2 bagian",
       "3/6 bagian",
-      "Kedua jawaban kedua dan ketiga benar"
+      "Jawaban B dan C benar"
     ],
     "correct_answer": 3
   },
@@ -12083,10 +12083,10 @@
     "choices": [
       "6/20 meter",
       "3/5 meter",
-      "6/10 meter",
-      "Kedua jawaban kedua dan ketiga benar"
+      "3/10 meter",
+      "6/15 meter"
     ],
-    "correct_answer": 3
+    "correct_answer": 1
   },
   {
     "skill_id": 280,
@@ -12095,7 +12095,7 @@
       "3/18",
       "1/3",
       "3/9",
-      "Kedua jawaban kedua dan ketiga benar"
+      "Jawaban B dan C benar"
     ],
     "correct_answer": 3
   },
